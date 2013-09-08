@@ -1,9 +1,16 @@
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
@@ -11,6 +18,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.highgui.*;
 import org.opencv.imgproc.*;
 
@@ -22,9 +30,13 @@ public class Image {
 	private String IMAGE_WINDOW_NAME;
 	
 	// Some color constants... :)
-	final private Scalar COLOR_GREEN = new Scalar(0, 255, 0);
-	final private Scalar COLOR_RED = new Scalar(0, 0, 255);
+	final Scalar COLOR_GREEN = new Scalar(0, 255, 0);
+	final Scalar COLOR_RED = new Scalar(0, 0, 255);
 	final private Scalar COLOR_BLUE = new Scalar(255, 0, 0);
+	
+	public int NORMAL_THRESHOLD   = 1;
+	public int ADAPTIVE_THRESHOLD = 2;
+	public int SEGMENTATION_THRESHOLD = 3;
 	
 	/* 
 	 * Constructor Image()
@@ -58,6 +70,16 @@ public class Image {
 		this.image = image; 
 	}
 	
+
+	public int getImageWidth(){
+		Mat image = this.getImage();
+		return image.width();
+	}
+	
+	public int getImageHeight(){
+		Mat image = this.getImage();
+		return image.height();
+	}
 	
 	public String printImageMatrix(){
 		Mat image = this.getImage();
@@ -86,10 +108,15 @@ public class Image {
 		return equalized;
 	}
 	
-	public Mat generateThresholdImage(Mat image, int thresholdValue){
-		Mat result = new Mat(); int type = Imgproc.THRESH_BINARY; //+Imgproc.THRESH_OTSU
-		//Imgproc.threshold(image, result, thresholdValue, 255, type);
-		Imgproc.adaptiveThreshold(image, result, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, type, 11, 18);
+	public Mat generateThresholdImage(Mat image, int thresholdType){
+		Mat result = new Mat(); int type = Imgproc.THRESH_BINARY;//+Imgproc.THRESH_OTSU;
+		if (thresholdType == this.NORMAL_THRESHOLD){
+			Imgproc.threshold(image, result, this.getThresholdValue(), 255, type);
+		} else if (thresholdType == this.ADAPTIVE_THRESHOLD){
+			Imgproc.adaptiveThreshold(image, result, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, type, 11, 18);
+		} else if (thresholdType == this.SEGMENTATION_THRESHOLD){
+			Imgproc.threshold(image, result, 55, 255, type);
+		}
 		
 		return result;
 	}
@@ -157,7 +184,7 @@ public class Image {
 		Mat equalized, thresholded, canny;
 		
 		equalized = this.equalizeHistogram();
-		thresholded = this.generateThresholdImage(equalized, this.getThresholdValue());
+		thresholded = this.generateThresholdImage(equalized, this.ADAPTIVE_THRESHOLD);
 		
 		//Generate threshold values for canny :)
 		Histogram h = new Histogram(this); int mean = h.getHistogramMean();
@@ -199,6 +226,45 @@ public class Image {
 		}
 		
 		return originalImage;
+	}
+	
+	public boolean isImageLandscape(){
+		Mat originalImage = this.getImage();
+		
+		if (originalImage.width() > originalImage.height()){
+			return true;
+		} else { return false; }
+	}
+	
+	public boolean isImagePortrait(){
+		Mat originalImage = this.getImage();
+		
+		if (originalImage.width() < originalImage.height()){
+			return true;
+		} else { return false; }
+	}
+	
+	public BufferedImage convertMatToBufferedImage(Mat image){
+		// This is used to show it to swing... Of course you need swing for this...
+		// 	Some *.jpg encoding for it :)
+		
+		MatOfByte m = new MatOfByte(); BufferedImage b = null;
+		Highgui.imencode(".jpg", image, m); 
+		
+		byte[] byteArray = m.toArray();
+		try {
+			InputStream in = new ByteArrayInputStream(byteArray);
+			b = ImageIO.read(in);
+		} catch(IOException e){ e.printStackTrace(); } 
+		
+		return b;
+	}
+	
+	public Mat resizeImage(Mat image, int widthPixels, int heightPixels){
+		Mat dst = new Mat();
+		Imgproc.resize(image, dst, new Size(320, 240));
+		
+		return dst;
 	}
 	
 }

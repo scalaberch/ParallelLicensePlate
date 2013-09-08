@@ -7,10 +7,8 @@ public class PlateDetect implements Runnable{
 	private Image candidatePlate;
 	private String processName; //for debugging purposes only :)
 	
-	public PlateDetect(Mat candidatePlate){
-		Image img = new Image("");
-		img.setImage(candidatePlate);
-		this.setCandidatePlate(img);
+	public PlateDetect(Image candidatePlate){
+		this.setCandidatePlate(candidatePlate);
 	}
 	
 	public Image getCandidatePlate(){ return this.candidatePlate; }
@@ -24,10 +22,10 @@ public class PlateDetect implements Runnable{
 	public void run() {
 		// Convert image to threshold muna...
 		Image img = this.getCandidatePlate(); 
-		Mat thresholded = img.generateThresholdImage(img.equalizeHistogram(), img.getThresholdValue());
+		//Mat thresholded = img.generateThresholdImage(img.equalizeHistogram(), Image.);
 		
 		// Test for thresholding :)
-		img.writeImageToFile(this.getProcessName(), img.getImage());
+		//img.writeImageToFile(this.getProcessName(), thresholded);
 		
 		// Set the images to a specific size...
 		// Size is about 70x25 (wxh)
